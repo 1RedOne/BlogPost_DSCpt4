@@ -18,15 +18,21 @@ configuration TestLab
     ) 
         
     #Import the required DSC Resources  
-    Import-DscResource -Module xComputerManagement 
     Import-DscResource -Module xActiveDirectory 
     Import-DscResource -Module xNetworking
     Import-DscResource -module xDHCpServer 
-   
+    Import-DscResource -Module xComputerManagement 
+
     Node $NodeName
     { #ConfigurationBlock 
         
- 
+        xComputer NewNameAndWorkgroup 
+            { 
+                Name          = $MachineName
+                
+             
+            }
+
         WindowsFeature ADDSInstall 
         { 
             
@@ -62,6 +68,14 @@ configuration TestLab
             
         }  
 
+        WindowsFeature DHCPTools 
+        { 
+            DependsOn= '[WindowsFeature]DHCP'
+            Ensure = 'Present'
+            Name = 'RSAT-DHCP'
+            IncludeAllSubFeature = $true
+        }  
+
         xADDomain SetupDomain {
             DomainAdministratorCredential= $firstDomainAdmin
             DomainName= $DomainName
@@ -82,7 +96,15 @@ configuration TestLab
          State = 'Active' 
          AddressFamily = 'IPv4' 
         } 
-
+        
+        xDhcpServerOption Option 
+     { 
+         Ensure = 'Present' 
+         ScopeID = '10.20.30.0' 
+         DnsDomain = 'fox.test' 
+         DnsServerIPAddress = '10.20.30.1'
+         AddressFamily = 'IPv4' 
+     }
 
     #End Configuration Block    
     } 
